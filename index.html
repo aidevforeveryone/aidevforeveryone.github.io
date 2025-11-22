@@ -268,6 +268,65 @@
             <p>&copy; 2024 AI+ Technologies. AI Development for Everyone.</p>
         </footer>
     </div>
+
+    <script>
+        // --- SUPABASE AYARLARI (BURAYI DOLDURMAYI UNUTMA) ---
+        const SUPABASE_URL = 'BURAYA_SUPABASE_URL_GELECEK';
+        const SUPABASE_KEY = 'BURAYA_SUPABASE_ANON_KEY_GELECEK';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Sayfa Yüklendiğinde Oturum Kontrolü
+        window.onload = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            updateUI(session);
+        };
+
+        // Arayüzü Güncelle
+        function updateUI(session) {
+            if (session) {
+                document.getElementById('auth-logged-out').classList.add('hidden');
+                document.getElementById('auth-logged-in').classList.remove('hidden');
+                fetchApiKey(session.user.id);
+            } else {
+                document.getElementById('auth-logged-out').classList.remove('hidden');
+                document.getElementById('auth-logged-in').classList.add('hidden');
+            }
+        }
+
+        // API Anahtarını Veritabanından Çek
+        async function fetchApiKey(userId) {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('api_key')
+                .eq('id', userId)
+                .single();
+            
+            if(data) {
+                document.getElementById('user-api-key').innerText = data.api_key;
+            }
+        }
+
+        // Çıkış Yap
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        // Modal İşlemleri
+        function showApiKey() { document.getElementById('apikey-modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
+        
+        // Kopyalama İşlemi
+        function copyKey() {
+            const key = document.getElementById('user-api-key').innerText;
+            navigator.clipboard.writeText(key);
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
     
 </body>
 </html>
