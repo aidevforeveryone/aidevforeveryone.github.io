@@ -370,27 +370,183 @@
             const pythonCode = `import requests
 import sys
 import time
+import socket
+import json
+import struct
+import threading
+import logging
 
-# --- AUTO-GENERATED CONFIGURATION (DO NOT EDIT) ---
+# --- 1. CONFIGURATION (Supabase & Server) ---
 SUPABASE_URL = "${SUPABASE_URL}"
 SUPABASE_KEY = "${SUPABASE_KEY}"
 
+# Sunucunun (Beyin) adresi - Opsiyonel, eğer client komut gönderecekse
+SERVER_CONTROL_URL = "http://localhost:8000/api/command" 
+
+# GPU Agent Ayarları
+AGENT_PORT = 5000
+AGENT_HOST = '0.0.0.0' # Tüm ağlardan gelen bağlantıyı kabul et
+
+# --- 2. PROTOCOL (İletişim Dili) ---
+CMD_INIT = 'INIT'
+CMD_FORWARD = 'FWD'
+CMD_TRAIN = 'TRN'
+
+def send_msg(sock, data):
+    msg = json.dumps(data).encode('utf-8')
+    sock.sendall(struct.pack('>I', len(msg)) + msg)
+
+def recv_msg(sock):
+    raw_msglen = recvall(sock, 4)
+    if not raw_msglen: return None
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    return json.loads(recvall(sock, msglen))
+
+def recvall(sock, n):
+    data = bytearray()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet: return None
+        data.extend(packet)
+    return data
+
+# --- 3. BACKEND ENGINE (CuPy/NumPy) ---
+try:
+    import cupy as cp
+    import cupy.sparse as cp_sparse
+    XP = cp
+    SP = cp_sparse
+    DEVICE = 'GPU (NVIDIA CUDA)'
+    logging.basicConfig(level=logging.ERROR) # Sadece hataları göster
+except ImportError:
+    import numpy as np
+    import scipy.sparse as sp_sparse
+    XP = np
+    SP = sp_sparse
+    DEVICE = 'CPU (Legacy Mode)'
+
+# --- 4. GPU WORKER CLASS (Hesaplama Birimi) ---
+class GPUWorker:
+    def __init__(self):
+        self.weights = None
+        self.dims = (0, 0)
+        self.active_connection = False
+
+    def handle_init(self, rows, cols):
+        self.dims = (rows, cols)
+        self.weights = SP.csr_matrix((rows, cols), dtype=XP.float32)
+        return {"status": "ok", "msg": f"Memory allocated: {rows}x{cols}"}
+
+    def handle_forward(self, indices):
+        if self.weights is None: return {"error": "Not initialized"}
+        try:
+            active_rows = self.weights[indices]
+            activation_vector = active_rows.sum(axis=0)
+            if DEVICE.startswith('GPU'):
+                probs = activation_vector.get().flatten()
+            else:
+                probs = np.array(activation_vector).flatten()
+            
+            total = float(np.sum(probs))
+            if total == 0: return {"indices": [], "values": []}
+
+            probs = probs / total
+            valid_idx = np.where(probs > 0.001)[0]
+            valid_vals = probs[valid_idx]
+            sorted_order = np.argsort(valid_vals)[::-1]
+            
+            return {
+                "indices": valid_idx[sorted_order][:50].tolist(),
+                "values": valid_vals[sorted_order][:50].tolist()
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    def handle_train(self, rows, cols, val):
+        if self.weights is None: return {"error": "No matrix"}
+        try:
+            r_arr = XP.asarray(rows, dtype=XP.int32)
+            c_arr = XP.asarray(cols, dtype=XP.int32)
+            d_arr = XP.asarray([val] * len(rows), dtype=XP.float32)
+            update_mat = SP.coo_matrix((d_arr, (r_arr, c_arr)), shape=self.dims, dtype=XP.float32)
+            self.weights = (self.weights + update_mat).tocsr()
+            # Clipping
+            self.weights.data = XP.minimum(XP.maximum(self.weights.data, 0.0), 10.0)
+            return {"status": "ack"}
+        except Exception as e:
+            return {"error": str(e)}
+
+# --- 5. AGENT THREAD (Arka Planda Çalışacak) ---
+def start_gpu_agent(stop_event):
+    """
+    Bu fonksiyon ayrı bir thread içinde çalışır.
+    Sürekli olarak sunucudan bağlantı bekler.
+    """
+    worker = GPUWorker()
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    
+    try:
+        server_sock.bind((AGENT_HOST, AGENT_PORT))
+        server_sock.listen(1)
+        # Timeout ekliyoruz ki thread kapatılabilsin (1 saniyede bir kontrol)
+        server_sock.settimeout(1.0) 
+    except Exception as e:
+        print(f"\n[GPU ERROR] Port binding failed: {e}")
+        return
+
+    print(f"\n[GPU AGENT] Listening on port {AGENT_PORT} ({DEVICE})... ready for jobs.")
+
+    while not stop_event.is_set():
+        try:
+            conn, addr = server_sock.accept()
+            worker.active_connection = True
+            # Bağlantı kurulunca timeout kaldırılabilir veya uzun tutulabilir
+            conn.settimeout(None) 
+            
+            # print(f"\n[CONNECTION] Server connected from {addr}") # CLI'ı bozmamak için loglamıyoruz
+            
+            with conn:
+                while not stop_event.is_set():
+                    data = recv_msg(conn)
+                    if not data: break
+                    
+                    cmd = data.get('cmd')
+                    resp = {}
+                    
+                    if cmd == CMD_INIT:
+                        resp = worker.handle_init(data['rows'], data['cols'])
+                    elif cmd == CMD_FORWARD:
+                        resp = worker.handle_forward(data['indices'])
+                    elif cmd == CMD_TRAIN:
+                        resp = worker.handle_train(data['rows'], data['cols'], data['lr'])
+                    else:
+                        resp = {"error": "Unknown cmd"}
+                    
+                    send_msg(conn, resp)
+            
+            # print(f"\n[DISCONNECT] Server disconnected from {addr}")
+            worker.active_connection = False
+
+        except socket.timeout:
+            continue # Stop event kontrolü için döngüye dön
+        except Exception as e:
+            # print(f"[AGENT ERROR] {e}")
+            pass
+    
+    server_sock.close()
+    print("[GPU AGENT] Stopped.")
+
+# --- 6. AUTHENTICATION ---
 def verify_api_key(api_key):
-    """
-    Verifies the API key against the Pulse Network.
-    """
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-    
-    # Check 'profiles' table
     url = f"{SUPABASE_URL}/rest/v1/profiles?api_key=eq.{api_key}&select=id,email"
-    
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=5)
         data = response.json()
-        
         if len(data) > 0:
             return True, data[0]['email']
         else:
@@ -398,59 +554,74 @@ def verify_api_key(api_key):
     except Exception as e:
         return False, str(e)
 
+# --- 7. MAIN CLI ---
 def main():
     print("""
     ╔═══════════════════════════════════════╗
-    ║       AI+ TERMINAL CLIENT v2.4        ║
-    ║      Bio-Logical Cloud Interface      ║
+    ║         AI+ TERMINAL CLIENT           ║
+    ║      v3.0.0 - Distributed Node        ║
     ╚═══════════════════════════════════════╝
     """)
     
-    # Note: Requests library check
-    try:
-        import requests
-    except ImportError:
-        print("[ERROR] Missing 'requests' library.")
-        print("Please run: pip install requests")
-        input("Press Enter to exit...")
-        return
-
-    api_key = input("Enter your AI+ API Key: ").strip()
-    
-    print("\\n[Connecting] Verifying credentials with AI+ Network...")
+    # 1. Auth
+    api_key = input("Enter your PULSE API Key: ").strip()
+    print("\n[Connecting] Verifying credentials with Pulse Network...")
     time.sleep(1.0)
     
     is_valid, email = verify_api_key(api_key)
     
-    if is_valid:
-        print(f"[SUCCESS] Authenticated as: {email}")
-        print("[INFO] Secure channel established.")
-        print("---------------------------------------------------")
-        
-        while True:
-            try:
-                command = input(f"aiplus@{email.split('@')[0]}:~$ ")
-                
-                if command == "exit":
-                    print("Disconnecting...")
-                    break
-                elif command == "train":
-                    print("[AI+] Uploading local weights to cloud...")
-                    time.sleep(1.5)
-                    print("[SUCCESS] Training started on remote cluster.")
-                elif command == "status":
-                    print("[STATUS] GPU Cluster: ONLINE | Latency: 24ms")
-                elif command == "help":
-                    print("Commands: train, status, exit")
-                else:
-                    print(f"Command not found: {command}")
-            except KeyboardInterrupt:
-                break
-                
-    else:
+    if not is_valid:
         print("[ERROR] Invalid API Key. Access Denied.")
-        print("Please login to the website to generate a new key.")
-        input("Press Enter to exit...")
+        return
+
+    print(f"[SUCCESS] Authenticated as: {email}")
+    
+    # 2. Start GPU Agent in Background
+    stop_event = threading.Event()
+    agent_thread = threading.Thread(target=start_gpu_agent, args=(stop_event,))
+    agent_thread.daemon = True # Ana program kapanırsa bu da kapansın
+    agent_thread.start()
+    
+    time.sleep(0.5) # Thread'in print çıktısı CLI'ı bozmasın diye bekle
+    print("---------------------------------------------------")
+    print(f"[INFO] GPU Node Active. Using: {DEVICE}")
+    print(f"[INFO] Listening for Server tasks on port {AGENT_PORT}")
+    print("---------------------------------------------------")
+
+    # 3. CLI Loop
+    user_name = email.split('@')[0]
+    while True:
+        try:
+            command = input(f"pulse@{user_name}:~$ ").strip()
+            
+            if command == "exit":
+                print("Stopping GPU Agent...")
+                stop_event.set()
+                agent_thread.join()
+                print("Disconnected.")
+                break
+            
+            elif command == "status":
+                print(f"[STATUS] GPU Backend: {DEVICE}")
+                print(f"[STATUS] Agent Port: {AGENT_PORT}")
+                print(f"[STATUS] Auth: Verified")
+                
+            elif command == "clear":
+                print("\033[H\033[J", end="") # Terminali temizle
+                
+            elif command == "help":
+                print("Available commands: status, exit, clear, help")
+                
+            elif command == "":
+                pass
+            
+            else:
+                print(f"Command not found: {command}")
+                
+        except KeyboardInterrupt:
+            print("\nForce Exit...")
+            stop_event.set()
+            break
 
 if __name__ == "__main__":
     main()
