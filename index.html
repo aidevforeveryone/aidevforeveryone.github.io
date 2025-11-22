@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI+ | AI Development For Everyone</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <style>
+        /* Modal için arka plan bulanıklığı */
+        .modal-backdrop {
+            background-color: rgba(3, 3, 4, 0.8);
+            backdrop-filter: blur(8px);
+        }
+    </style>
 </head>
 <body>
 
@@ -25,16 +34,62 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition">Login</a>
-                    <a href="/console">
-                        <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="17" y2="17"></line></svg>
-                            Console
+                    
+                    <div id="auth-logged-out" class="flex items-center gap-4">
+                        <a href="login.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Login</a>
+                        <a href="signup.html">
+                            <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
+                                Sign Up
+                            </button>
+                        </a>
+                    </div>
+
+                    <div id="auth-logged-in" class="hidden flex items-center gap-4">
+                        <button onclick="showApiKey()" class="text-sm font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded transition mr-2">
+                            My API Key
                         </button>
-                    </a>
+
+                        <a href="/console">
+                            <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="17" y2="17"></line></svg>
+                                Console
+                            </button>
+                        </a>
+
+                        <button onclick="logout()" class="ml-2 text-gray-500 hover:text-red-400 transition" title="Logout">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </nav>
+
+        <div id="apikey-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center modal-backdrop px-4">
+            <div class="bg-[#0A0A0C] border border-cyan-500/30 p-8 rounded-2xl w-full max-w-md relative shadow-2xl shadow-cyan-900/20">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                
+                <div class="mb-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-400 text-[10px] font-bold uppercase tracking-wider mb-3">
+                        Secure Access
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Your API Key</h2>
+                    <p class="text-gray-400 text-sm mt-2">Use this key to connect your local client to the AI+ Cloud Engine.</p>
+                </div>
+                
+                <div class="bg-black/50 p-4 rounded-lg border border-white/10 flex items-center justify-between mb-6 group hover:border-cyan-500/30 transition">
+                    <code id="user-api-key" class="text-cyan-400 font-mono text-sm truncate mr-4 select-all">Loading key...</code>
+                    <button onclick="copyKey()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded transition border border-white/5">Copy</button>
+                </div>
+
+                <a href="#" onclick="alert('Download logic would go here')" class="text-xs text-gray-500 flex items-center gap-1 hover:text-white transition justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+                    Download Client Software (v2.4)
+                </a>
+            </div>
+        </div>
 
         <header class="relative pt-32 pb-20 lg:pt-40 lg:pb-32 px-6 overflow-hidden">
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] -z-10 animate-pulse-fade"></div>
@@ -59,7 +114,7 @@
                 </p>
                 
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <button class="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold text-white transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
+                    <button onclick="window.location.href='signup.html'" class="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold text-white transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
                         Get Started 
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                     </button>
@@ -236,7 +291,7 @@
                                 10k Neuron Limit
                             </li>
                         </ul>
-                        <button class="w-full py-3 border border-white/20 rounded-lg text-white hover:bg-white/5 transition">Sign Up</button>
+                        <button onclick="window.location.href='signup.html'" class="w-full py-3 border border-white/20 rounded-lg text-white hover:bg-white/5 transition">Sign Up</button>
                     </div>
 
                     <div class="p-8 rounded-2xl border border-cyan-500 bg-cyan-900/10 relative">
@@ -257,7 +312,7 @@
                                 Sparse Activation Analytics
                             </li>
                         </ul>
-                        <button class="w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition font-bold shadow-lg shadow-cyan-500/20">Get Access</button>
+                        <button onclick="window.location.href='signup.html'" class="w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition font-bold shadow-lg shadow-cyan-500/20">Get Access</button>
                     </div>
 
                 </div>
@@ -270,31 +325,43 @@
     </div>
 
     <script>
-        // --- SUPABASE AYARLARI (BURAYI DOLDURMAYI UNUTMA) ---
+        // --- SUPABASE KONFİGURASYONU ---
+        // Aşağıdaki iki değişkeni Supabase proje ayarlarından aldığın değerlerle değiştir.
         const SUPABASE_URL = 'BURAYA_SUPABASE_URL_GELECEK';
         const SUPABASE_KEY = 'BURAYA_SUPABASE_ANON_KEY_GELECEK';
         
+        // Supabase istemcisini başlat
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Sayfa Yüklendiğinde Oturum Kontrolü
+        // Sayfa Yüklendiğinde Çalışacak Kod
         window.onload = async () => {
+            // Mevcut oturum bilgisini al
             const { data: { session } } = await supabase.auth.getSession();
+            
+            // Arayüzü duruma göre güncelle
             updateUI(session);
         };
 
-        // Arayüzü Güncelle
+        // Arayüzü Güncelleme Fonksiyonu (Giriş yapıldı mı kontrolü)
         function updateUI(session) {
+            const loggedOutDiv = document.getElementById('auth-logged-out');
+            const loggedInDiv = document.getElementById('auth-logged-in');
+
             if (session) {
-                document.getElementById('auth-logged-out').classList.add('hidden');
-                document.getElementById('auth-logged-in').classList.remove('hidden');
+                // Kullanıcı giriş yapmış
+                loggedOutDiv.classList.add('hidden');
+                loggedInDiv.classList.remove('hidden');
+                
+                // API Key'i çekmek için fonksiyonu çağır
                 fetchApiKey(session.user.id);
             } else {
-                document.getElementById('auth-logged-out').classList.remove('hidden');
-                document.getElementById('auth-logged-in').classList.add('hidden');
+                // Kullanıcı giriş yapmamış
+                loggedOutDiv.classList.remove('hidden');
+                loggedInDiv.classList.add('hidden');
             }
         }
 
-        // API Anahtarını Veritabanından Çek
+        // API Anahtarını Veritabanından Çeken Fonksiyon
         async function fetchApiKey(userId) {
             const { data, error } = await supabase
                 .from('profiles')
@@ -303,28 +370,44 @@
                 .single();
             
             if(data) {
+                // Gelen anahtarı modal içindeki <code> etiketine yaz
                 document.getElementById('user-api-key').innerText = data.api_key;
+            } else {
+                console.error("API Key bulunamadı:", error);
             }
         }
 
-        // Çıkış Yap
+        // Çıkış Yapma Fonksiyonu
         async function logout() {
             await supabase.auth.signOut();
-            window.location.reload();
+            window.location.reload(); // Sayfayı yenile
         }
 
-        // Modal İşlemleri
-        function showApiKey() { document.getElementById('apikey-modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
+        // Modal Açma/Kapama Fonksiyonları
+        function showApiKey() {
+            document.getElementById('apikey-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('apikey-modal').classList.add('hidden');
+        }
         
-        // Kopyalama İşlemi
+        // Kopyalama Fonksiyonu
         function copyKey() {
-            const key = document.getElementById('user-api-key').innerText;
-            navigator.clipboard.writeText(key);
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Copied!";
-            setTimeout(() => btn.innerText = originalText, 2000);
+            const keyElement = document.getElementById('user-api-key');
+            const key = keyElement.innerText;
+            
+            navigator.clipboard.writeText(key).then(() => {
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = "Copied!";
+                btn.classList.add("bg-green-600");
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove("bg-green-600");
+                }, 2000);
+            });
         }
     </script>
     
