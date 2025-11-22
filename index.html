@@ -4,270 +4,402 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI+ | AI Development For Everyone</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI+ | AI Development For Everyone</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    
+    <style>
+        /* * Tailwind CSS Sınıflarının Karşılığı 
+         * GitHub Pages'da harici bir build süreci olmadan çalışması için
+         * Temel CSS ve animasyonlar buraya manuel olarak eklenmiştir.
+         */
 
+        /* Base Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Root Variables/Colors */
+        :root {
+            --bg-primary: #030304;
+            --bg-secondary: #050505;
+            --bg-card: #08080A;
+            --text-white: #fff;
+            --text-gray-300: #d1d5db;
+            --text-gray-400: #9ca3af;
+            --text-gray-500: #6b7280;
+            --text-gray-600: #4b5563;
+            --cyan-400: #22d3ee;
+            --cyan-500: #06b6d4;
+            --cyan-600: #0891b2;
+            --blue-500: #3b82f6;
+            --purple-500: #a855f7;
+            --red-400: #f87171;
+            --green-400: #4ade80;
+            --yellow-400: #facc15;
+            --yellow-500: #eab308;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-white);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            overflow-x: hidden;
+            /* selection:bg-cyan-500/30 */
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
+
+        /* Custom Scrollbar for better dark mode look (optional) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937; /* gray-800 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #030304; /* bg-primary */
+        }
+
+        /* Utility Classes (Simplified for key elements) */
+        .max-w-7xl { max-width: 80rem; }
+        .max-w-5xl { max-width: 64rem; }
+        .max-w-4xl { max-width: 56rem; }
+        .max-w-3xl { max-width: 48rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .h-20 { height: 5rem; }
+        .leading-tight { line-height: 1.25; }
+        .leading-relaxed { line-height: 1.625; }
+        .transition { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .duration-300 { transition-duration: 300ms; }
+        .duration-500 { transition-duration: 500ms; }
+        
+        /* Flex & Grid */
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-8 { gap: 2rem; }
+        .gap-16 { gap: 4rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .grid { display: grid; }
+        @media (min-width: 768px) {
+            .md\:flex { display: flex; }
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .md\:text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+            .md\:text-7xl { font-size: 4.5rem; line-height: 1; }
+            .md\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        }
+        @media (min-width: 1024px) {
+            .lg\:pt-40 { padding-top: 10rem; }
+            .lg\:pb-32 { padding-bottom: 8rem; }
+            .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        /* Typography */
+        .font-sans { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .font-extrabold { font-weight: 800; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .tracking-widest { letter-spacing: 0.1em; }
+        .tracking-tight { letter-spacing: -0.025em; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-5xl { font-size: 3rem; line-height: 1; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .uppercase { text-transform: uppercase; }
+        .italic { font-style: italic; }
+
+        /* Colors, Borders, Shadows */
+        .bg-\[\#030304\] { background-color: var(--bg-primary); }
+        .bg-\[\#050505\] { background-color: var(--bg-secondary); }
+        .bg-\[\#08080A\] { background-color: var(--bg-card); }
+        .bg-\[\#0A0A0C\] { background-color: #0A0A0C; }
+        .border-white\/5 { border-color: rgba(255, 255, 255, 0.05); }
+        .border-white\/10 { border-color: rgba(255, 255, 255, 0.1); }
+        .border-white\/20:hover { border-color: rgba(255, 255, 255, 0.2); }
+        .border-cyan-500\/30 { border-color: rgba(6, 182, 212, 0.3); }
+        .bg-cyan-950\/30 { background-color: rgba(8, 51, 68, 0.3); } /* #083344/30 */
+        .hover\:text-cyan-400:hover { color: var(--cyan-400); }
+        .text-cyan-400 { color: var(--cyan-400); }
+        .text-cyan-500 { color: var(--cyan-500); }
+        .text-purple-400 { color: #c084fc; } /* purple-400 */
+        .text-blue-400 { color: #60a5fa; } /* blue-400 */
+        .text-green-400 { color: var(--green-400); }
+        .text-yellow-400 { color: var(--yellow-400); }
+        .text-yellow-500 { color: var(--yellow-500); }
+
+        /* Component Styling */
+        .rounded-full { border-radius: 9999px; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        
+        /* Navbar */
+        .backdrop-blur-md { backdrop-filter: blur(8px); }
+        .bg-\[\#030304\]\/80 { background-color: rgba(3, 3, 4, 0.8); }
+
+        /* Gradient Text */
+        .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
+        .text-transparent { color: transparent; }
+        .bg-gradient-to-r { background-image: linear-gradient(to right, var(--cyan-400), var(--blue-500), var(--purple-500)); }
+
+        /* Hero Background Effects */
+        .blur-\[120px\] { filter: blur(120px); }
+        .bg-cyan-600\/10 { background-color: rgba(8, 145, 178, 0.1); }
+        .bg-purple-600\/5 { background-color: rgba(147, 51, 234, 0.05); }
+
+        /* Keyframes for Heartbeat/Pulse Animation */
+        @keyframes pulse-fade {
+            0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        .animate-pulse-fade {
+            animation: pulse-fade 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Pulse for small dot */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Benchmark/Code Section */
+        .bg-\[\#0C0C0C\] { background-color: #0C0C0C; }
+        .bg-\[\#151517\] { background-color: #151517; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .decoration-red-500\/50 { text-decoration-color: rgba(239, 68, 68, 0.5); }
+        .decoration-2 { text-decoration-thickness: 2px; }
+
+        /* Architecture Cards */
+        .shadow-\[0\_0\_30px\_-15px\_rgba\(6,182,212,0\.2\)\] {
+            box-shadow: 0 0 30px -15px rgba(6, 182, 212, 0.2);
+        }
+    </style>
 </head>
 <body>
 
-    <div class="min-h-screen bg-[#030304] text-white font-sans overflow-x-hidden">
-        
-        <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-[#030304]/80 backdrop-blur-md">
-            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                <div class="flex items-center gap-2 group cursor-pointer">
-                    <span class="text-2xl font-extrabold tracking-widest text-white">AI+</span>
-                </div>
-                
-                <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-                    <a href="#benchmark" class="hover:text-cyan-400 transition">Benchmarks</a>
-                    <a href="#architecture" class="hover:text-cyan-400 transition">Architecture</a>
-                    <a href="#pricing" class="hover:text-cyan-400 transition">Pricing</a>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition">Login</a>
-                    <a href="/console">
-                        <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="17" y2="17"></line></svg>
-                            Console
-                        </button>
-                    </a>
-                </div>
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-[#030304]/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2 group cursor-pointer">
+                <span class="text-2xl font-extrabold tracking-widest text-white">AI+</span>
             </div>
-        </nav>
-
-        <header class="relative pt-32 pb-20 lg:pt-40 lg:pb-32 px-6 overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] -z-10 animate-pulse-fade"></div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-[120px] -z-10"></div>
             
-            <div class="max-w-5xl mx-auto text-center">
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-400 text-xs font-bold mb-8">
-                    <span class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span> Bio-Inspired Training Engine
+            <div id="nav-links" class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="#benchmark" class="hover:text-cyan-400 transition">Benchmarks</a>
+                <a href="#pricing" class="hover:text-cyan-400 transition">Pricing</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div id="auth-buttons">
+                    <button onclick="openModal('login')" class="text-sm font-medium text-gray-300 hover:text-white transition mr-4">Login</button>
+                    <button onclick="openModal('signup')" class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 transition">Sign Up</button>
                 </div>
-                
-                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
-                    AI Development <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">
-                        For Everyone.
-                    </span>
-                </h1>
-                
-                <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-                    No traditional layers. No backpropagation. <br/>
-                    AI+ eliminates hardware bottlenecks using <strong>Hebbian-like</strong> learning rules 
-                    and <strong>active neuron simulation</strong>. Train biological logic on your laptop.
-                </p>
-                
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <button class="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold text-white transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
-                        Get Started 
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                    </button>
-                    <button class="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-white transition flex items-center justify-center gap-2">
-                        Read Whitepaper
-                    </button>
+
+                <div id="user-menu" class="hidden flex items-center gap-4">
+                    <span id="user-email" class="text-xs text-cyan-400"></span>
+                    <button onclick="logout()" class="text-sm text-red-400 hover:text-red-300">Logout</button>
+                    <a href="/console" class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg">Console</a>
                 </div>
             </div>
-        </header>
+        </div>
+    </nav>
 
-        <section id="benchmark" class="py-20 bg-[#050505] border-y border-white/5">
-            <div class="max-w-7xl mx-auto px-6">
-                <div class="grid lg:grid-cols-2 gap-16 items-center">
-                    <div>
-                        <h2 class="text-3xl md:text-4xl font-bold mb-6">Forget Hardware Limits</h2>
-                        <p class="text-gray-400 mb-8 leading-relaxed">
-                            The following data represents real-world tests performed on an <strong>NVIDIA RTX 4050 Mobile</strong> GPU.
-                        </p>
-                        <div class="space-y-4">
-                            <div class="bg-[#0A0A0C] p-5 rounded-xl border border-white/10 flex items-center justify-between">
-                                <div>
-                                    <div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Model Capacity</div>
-                                    <div class="text-2xl font-bold text-white">91,000 <span class="text-sm text-gray-500 font-normal">Neurons</span></div>
-                                </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 w-8 h-8"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg>
-                            </div>
-                            <div class="bg-[#0A0A0C] p-5 rounded-xl border border-cyan-500/30 relative overflow-hidden">
-                                <div class="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-cyan-500/10 to-transparent"></div>
-                                <div class="relative z-10">
-                                    <div class="text-xs text-cyan-500 font-bold uppercase tracking-wider">VRAM Usage</div>
-                                    <div class="text-3xl font-bold text-white">2.3 GB <span class="text-sm text-gray-500 font-normal">/ 6 GB</span></div>
-                                    <div class="text-xs text-green-400 mt-1">Sparse Activation Active</div>
-                                </div>
-                            </div>
-                            <div class="bg-[#0A0A0C] p-5 rounded-xl border border-white/10 flex items-center justify-between">
-                                <div>
-                                    <div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Training Speed</div>
-                                    <div class="text-2xl font-bold text-white">12 Min <span class="text-sm text-gray-500 font-normal">/ Full Cycle</span></div>
-                                </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-8 h-8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="relative group" id="code">
-                        <div class="absolute inset-0 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition duration-500"></div>
-                        <div class="relative bg-[#0C0C0C] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-                            <div class="bg-[#151517] px-4 py-3 flex items-center border-b border-white/5">
-                                <div class="flex gap-2 mr-4">
-                                    <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                                    <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                                    <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
-                                </div>
-                                <div class="text-xs text-gray-500 font-mono flex-1 text-center pr-12">
-                                    train_bio_model.py
-                                </div>
-                            </div>
-                            <div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto">
-                                <div class="opacity-40 mb-6 select-none">
-                                    <div class="text-gray-500 mb-1"># Classic Method (Dense)</div>
-                                    <div class="line-through decoration-red-500/50 decoration-2">import keras</div>
-                                    <div class="line-through decoration-red-500/50 decoration-2">model = Dense(units=4096, activation='relu')</div>
-                                    <div class="text-red-400 text-xs mt-1 italic">&gt; Calculating 4096^2 connections... OOM Error.</div>
-                                </div>
-                                <div class="relative">
-                                    <div class="absolute -left-6 top-0 bottom-0 w-1 bg-cyan-500/50 rounded-full"></div>
-                                    <div class="text-gray-500 mb-2"># AI+ (Biological Arch)</div>
-                                    <div><span class="text-purple-400">import</span> aiplus <span class="text-purple-400">as</span> aip</div>
-                                    <div class="mt-2"><span class="text-blue-400">net</span> = aip.BioNetwork(neurons=<span class="text-yellow-400">91000</span>)</div>
-                                    <div><span class="text-gray-500"># Only active neurons are computed:</span></div>
-                                    <div>net.train(data, rule=<span class="text-green-400">'hebbian_dynamic'</span>)</div>
-                                    <div class="mt-4 p-3 bg-black/30 rounded border border-white/5 text-xs font-mono text-cyan-300">
-                                        <span class="text-green-400">➜</span> [AI+] Active Neurons: %12 <br/>
-                                        <span class="text-green-400">➜</span> [CPU] Serial Rules Processed<br/>
-                                        <span class="text-green-400">➜</span> [GPU] Parallel Weights Updated
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <section id="dashboard-section" class="hidden pt-32 px-6">
+        <div class="max-w-4xl mx-auto bg-[#0A0A0C] border border-cyan-500/30 p-8 rounded-2xl">
+            <h2 class="text-2xl font-bold mb-4 text-white">Welcome back, Researcher.</h2>
+            <p class="text-gray-400 mb-6">Here is your unique API key to connect your local AI+ Client to our neural cloud.</p>
+            
+            <div class="bg-black/50 p-4 rounded-lg border border-white/10 flex items-center justify-between mb-6">
+                <div>
+                    <div class="text-xs text-gray-500 uppercase mb-1">Your API Key</div>
+                    <div id="api-key-display" class="font-mono text-cyan-400 text-lg tracking-wider">Loading...</div>
                 </div>
+                <button onclick="copyApiKey()" class="text-sm text-white bg-white/10 px-3 py-1 rounded hover:bg-white/20">Copy</button>
             </div>
-        </section>
 
-        <section id="architecture" class="py-24 px-6 bg-[#030304]">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Not Deep Learning. <span class="text-cyan-500">Smart Learning.</span></h2>
-                    <p class="text-gray-400 max-w-2xl mx-auto">
-                        We inspired by nature. Your brain doesn't fire all neurons at once; 
-                        neither do our models. Here are the 3 pillars of our architecture.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-8">
-                    
-                    <div class="bg-[#08080A] border border-white/10 p-8 rounded-2xl hover:border-cyan-500/30 transition duration-300 group">
-                        <div class="bg-cyan-900/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-cyan-400"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-3">No Hidden Layers</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            Instead of the classic "Input - Hidden - Output" stack, we use a free-form 
-                            biological <strong>Mesh</strong> structure. Data flows organically through the network.
-                        </p>
-                        <div class="h-24 border border-white/5 rounded-lg bg-black/40 relative overflow-hidden flex items-center justify-center">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-30">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-gray-600"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg>
-                            </div>
-                            <div class="z-10 text-xs font-mono text-cyan-300 bg-cyan-900/30 px-2 py-1 rounded">Unstructured Mesh</div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#08080A] border border-cyan-500/40 p-8 rounded-2xl shadow-[0_0_30px_-15px_rgba(6,182,212,0.2)] relative">
-                        <div class="absolute top-4 right-4 text-[10px] font-bold bg-cyan-500 text-black px-2 py-1 rounded">CORE TECH</div>
-                        <div class="bg-purple-900/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-purple-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-3">Sparse Activation</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            We only simulate neurons that are actively firing. This reduces the 
-                            computational load by up to 90%, bypassing OOM errors.
-                        </p>
-                        
-                        <div class="h-24 border border-white/5 rounded-lg bg-black/40 p-4 grid" style="grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.5rem; align-items: center; justify-content: center;">
-                            <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
-                            <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
-                            <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
-                            <div class="col-span-8 text-[10px] text-center text-gray-500 mt-1">Only firing neurons processed</div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#08080A] border border-white/10 p-8 rounded-2xl hover:border-cyan-500/30 transition duration-300 group">
-                        <div class="bg-blue-900/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-blue-400"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M6 21V9a9 9 0 0 0 9 9"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-3">Hebbian & Hybrid</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            The Hebbian rule is split: Serial logic operations are handled by the CPU, 
-                            while parallel weight updates are offloaded to the GPU.
-                        </p>
-                        <div class="h-24 border border-white/5 rounded-lg bg-black/40 flex items-center justify-center gap-4 px-4">
-                            <div class="flex flex-col items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-400"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M15 9h-6V7h6V9z"></path><path d="M12 17v-2"></path><path d="M12 9v-2"></path><path d="M9 12H7"></path><path d="M17 12h-2"></path></svg>
-                                <span class="text-[10px] text-gray-500">CPU (Logic)</span>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-600"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                            <div class="flex flex-col items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-cyan-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                                <span class="text-[10px] text-cyan-500">GPU (Weight)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+            <div class="p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+                <h3 class="font-bold text-blue-400 mb-2">How to use?</h3>
+                <p class="text-sm text-gray-300">Download the Python Client below. Run it in your terminal and paste this API key when prompted.</p>
+                <a href="#" onclick="alert('Client indirme linki buraya eklenecek.')" class="inline-block mt-3 text-sm font-bold text-white underline">Download AI+_client.py</a>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="pricing" class="py-20 px-6 border-t border-white/5">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold mb-12">Access Plans</h2>
-                <div class="grid md:grid-cols-2 gap-8 text-left">
-                    
-                    <div class="p-8 rounded-2xl border border-white/10 bg-[#0A0A0C] hover:border-white/20 transition">
-                        <h3 class="text-xl font-bold text-white mb-2">Community</h3>
-                        <div class="text-3xl font-bold text-white mb-6">Free</div>
-                        <ul class="space-y-3 text-sm text-gray-400 mb-8">
-                            <li class="flex gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-500"><path d="M20 6 9 17l-5-5"></path></svg>
-                                Basic CPU Hebbian Mode
-                            </li>
-                            <li class="flex gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-500"><path d="M20 6 9 17l-5-5"></path></svg>
-                                10k Neuron Limit
-                            </li>
-                        </ul>
-                        <button class="w-full py-3 border border-white/20 rounded-lg text-white hover:bg-white/5 transition">Sign Up</button>
-                    </div>
+    <header id="hero-section" class="relative pt-32 pb-20 px-6 text-center">
+        <h1 class="text-5xl font-bold text-white mb-4">AI Development For Everyone</h1>
+        <p class="text-gray-400">Log in to generate your API key and start training.</p>
+    </header>
 
-                    <div class="p-8 rounded-2xl border border-cyan-500 bg-cyan-900/10 relative">
-                        <div class="absolute top-0 right-0 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">PRO</div>
-                        <h3 class="text-xl font-bold text-white mb-2">Researcher</h3>
-                        <div class="text-3xl font-bold text-white mb-6">$29<span class="text-lg font-normal text-gray-500">/mo</span></div>
-                        <ul class="space-y-3 text-sm text-white mb-8">
-                            <li class="flex gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-cyan-400"><path d="M20 6 9 17l-5-5"></path></svg>
-                                <strong>Unlimited Bio-Neurons</strong>
-                            </li>
-                            <li class="flex gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-cyan-400"><path d="M20 6 9 17l-5-5"></path></svg>
-                                Hybrid CPU/GPU Accelerator
-                            </li>
-                            <li class="flex gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-cyan-400"><path d="M20 6 9 17l-5-5"></path></svg>
-                                Sparse Activation Analytics
-                            </li>
-                        </ul>
-                        <button class="w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition font-bold shadow-lg shadow-cyan-500/20">Get Access</button>
-                    </div>
 
+    <div id="auth-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-[#0A0A0C] border border-white/10 p-8 rounded-2xl w-full max-w-md relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+            
+            <h2 id="modal-title" class="text-2xl font-bold text-white mb-6">Login</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Email</label>
+                    <input type="email" id="email" class="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none">
                 </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none">
+                </div>
+                <button onclick="handleAuth()" id="auth-action-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg transition">
+                    Sign In
+                </button>
             </div>
-        </section>
-
-        <footer class="py-10 text-center text-gray-600 text-sm border-t border-white/5">
-            <p>&copy; 2024 AI+ Technologies. AI Development for Everyone.</p>
-        </footer>
+            
+            <div class="mt-4 text-center text-sm text-gray-500">
+                <span id="switch-text">Don't have an account?</span>
+                <button onclick="toggleAuthMode()" id="switch-btn" class="text-cyan-400 hover:underline ml-1">Sign Up</button>
+            </div>
+        </div>
     </div>
-    
+
+    <script>
+        // --- SUPABASE KONFIGURASYONU ---
+        // Buraya kendi proje bilgilerini yapıştır
+        const SUPABASE_URL = 'BURAYA_SUPABASE_URL_GELECEK'; 
+        const SUPABASE_KEY = 'BURAYA_SUPABASE_ANON_KEY_GELECEK';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let isLoginMode = true;
+
+        // Modal Yönetimi
+        function openModal(mode) {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            isLoginMode = (mode === 'login');
+            updateModalUI();
+        }
+
+        function closeModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function updateModalUI() {
+            const title = document.getElementById('modal-title');
+            const btn = document.getElementById('auth-action-btn');
+            const switchText = document.getElementById('switch-text');
+            const switchBtn = document.getElementById('switch-btn');
+
+            if (isLoginMode) {
+                title.innerText = "Login to AI+";
+                btn.innerText = "Sign In";
+                switchText.innerText = "Don't have an account?";
+                switchBtn.innerText = "Sign Up";
+            } else {
+                title.innerText = "Create Account";
+                btn.innerText = "Create Account";
+                switchText.innerText = "Already have an account?";
+                switchBtn.innerText = "Login";
+            }
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            updateModalUI();
+        }
+
+        // Auth İşlemleri
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('auth-action-btn');
+
+            if(!email || !password) return alert("Please fill all fields");
+
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                if (isLoginMode) {
+                    // GİRİŞ YAP
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    window.location.reload(); // Sayfayı yenile
+                } else {
+                    // KAYIT OL
+                    const { data, error } = await supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+                    alert("Registration successful! Please check your email to verify.");
+                    closeModal();
+                }
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.innerText = isLoginMode ? "Sign In" : "Create Account";
+                btn.disabled = false;
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        // Sayfa Yüklendiğinde Durum Kontrolü
+        window.onload = async () => {
+            // Oturum kontrolü
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session) {
+                // Giriş Yapılmışsa
+                document.getElementById('auth-buttons').classList.add('hidden');
+                document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                document.getElementById('hero-section').classList.add('hidden'); // İsteğe bağlı
+                
+                document.getElementById('user-email').innerText = session.user.email;
+
+                // API Key'i Çek
+                fetchApiKey(session.user.id);
+            }
+        };
+
+        async function fetchApiKey(userId) {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('api_key')
+                .eq('id', userId)
+                .single();
+
+            if (data) {
+                document.getElementById('api-key-display').innerText = data.api_key;
+            }
+        }
+
+        function copyApiKey() {
+            const key = document.getElementById('api-key-display').innerText;
+            navigator.clipboard.writeText(key);
+            alert("API Key copied!");
+        }
+    </script>
 </body>
 </html>
