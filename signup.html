@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up - PULSE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#030304] text-white flex items-center justify-center h-screen font-sans">
+
+    <div class="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-[#0A0A0C] shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold tracking-widest mb-2">PULSE</h1>
+            <p class="text-gray-400 text-sm">Create your account to access the neural cloud.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold">Email</label>
+                <input type="email" id="email" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none transition">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold">Password</label>
+                <input type="password" id="password" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none transition">
+            </div>
+            
+            <button onclick="handleSignup()" id="btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+                Sign Up
+            </button>
+        </div>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            Already have an account? <a href="login.html" class="text-cyan-400 hover:underline">Login</a>
+        </div>
+        <div class="mt-4 text-center">
+             <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400">← Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'BURAYA_URL_GELECEK';
+        const SUPABASE_KEY = 'BURAYA_ANON_KEY_GELECEK';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function handleSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('btn');
+
+            if(!email || !password) return alert('Please fill all fields');
+
+            btn.innerText = 'Creating Account...';
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                alert('Success! Account created. You can now login.');
+                window.location.href = 'login.html';
+            } catch (err) {
+                alert('Error: ' + err.message);
+                btn.innerText = 'Sign Up';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
