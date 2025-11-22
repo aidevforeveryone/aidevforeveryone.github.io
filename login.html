@@ -2,64 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - PULSE</title>
+    <title>Login | AI+</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-[#030304] text-white flex items-center justify-center h-screen font-sans">
+<body class="bg-[#030304] text-white flex items-center justify-center h-screen font-sans selection:bg-cyan-500/30">
 
-    <div class="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-[#0A0A0C] shadow-2xl relative">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-cyan-500/5 blur-3xl -z-10 rounded-full"></div>
+    <div class="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-[#0A0A0C] shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] -z-10"></div>
 
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold tracking-widest mb-2">PULSE</h1>
-            <p class="text-gray-400 text-sm">Welcome back, Researcher.</p>
+            <div class="flex justify-center mb-4">
+                <span class="text-3xl font-extrabold tracking-widest text-white">AI+</span>
+            </div>
+            <h2 class="text-xl font-bold text-white">Welcome Back</h2>
+            <p class="text-gray-400 text-sm mt-2">Access your API key and dashboard.</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold">Email</label>
-                <input type="email" id="email" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none transition">
+                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Email Address</label>
+                <input type="email" id="email" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="researcher@lab.com">
             </div>
             <div>
-                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold">Password</label>
-                <input type="password" id="password" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none transition">
+                <label class="block text-xs text-gray-500 mb-1 uppercase font-bold tracking-wider">Password</label>
+                <input type="password" id="password" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="••••••••">
             </div>
             
-            <button onclick="handleLogin()" id="btn" class="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 rounded-lg transition">
-                Login
+            <button onclick="handleLogin()" id="btn" class="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 rounded-lg transition mt-2">
+                Sign In
             </button>
         </div>
 
-        <div class="mt-6 text-center text-sm text-gray-500">
-            Don't have an account? <a href="signup.html" class="text-cyan-400 hover:underline">Sign Up</a>
+        <div class="mt-8 pt-6 border-t border-white/5 text-center text-sm text-gray-500">
+            New to AI+? <a href="signup.html" class="text-cyan-400 hover:text-cyan-300 font-medium transition">Create Account</a>
         </div>
+        
         <div class="mt-4 text-center">
-            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400">← Back to Home</a>
+            <a href="index.html" class="text-xs text-gray-600 hover:text-gray-400 transition">← Back to Homepage</a>
        </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'BURAYA_URL_GELECEK';
-        const SUPABASE_KEY = 'BURAYA_ANON_KEY_GELECEK';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // --- CONFIGURATION ---
+        // BURAYI KENDİ PROJE BİLGİLERİNLE DOLDUR
+        const SUPABASE_URL = 'https://ldtridqzmvamcqwguzzi.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdHJpZHF6bXZhbWNxd2d1enppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NzE2NDEsImV4cCI6MjA3OTI0NzY0MX0.sIpBP9SUY6vRcCbgNHPyVE-br8WXlYHjxZIm0rG1Miw';
 
+        // --- BAĞLANTIYI GÜVENLİ ŞEKİLDE BAŞLATMA ---
+        try {
+            if (!window.supabase) {
+                console.error("Supabase kütüphanesi yüklenemedi!");
+                alert("Hata: Supabase kütüphanesi yüklenemedi. Sayfayı yenileyin.");
+            } else {
+                // 'supabase' değişken adı çakışmasını önlemek için window._supabase kullanıyoruz
+                window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log("Supabase bağlantısı hazır.");
+            }
+        } catch (err) {
+            console.error("Başlatma Hatası:", err);
+        }
+
+        // --- GİRİŞ FONKSİYONU ---
         async function handleLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const btn = document.getElementById('btn');
 
+            // 1. Basit Kontroller
+            if(!email || !password) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            // 2. Butonu Kilitleme
             btn.innerText = 'Authenticating...';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
             btn.disabled = true;
 
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                // window._supabase kullanarak giriş yapıyoruz
+                const { data, error } = await window._supabase.auth.signInWithPassword({ 
+                    email: email, 
+                    password: password 
+                });
+
                 if (error) throw error;
-                // Başarılıysa ana sayfaya yönlendir
+                
+                // 3. Başarılı - Ana sayfaya yönlendir
                 window.location.href = 'index.html';
+                
             } catch (err) {
+                console.error("Login Error:", err);
                 alert('Login Failed: ' + err.message);
-                btn.innerText = 'Login';
+                
+                // Hata durumunda butonu eski haline getir
+                btn.innerText = 'Sign In';
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.disabled = false;
             }
         }
