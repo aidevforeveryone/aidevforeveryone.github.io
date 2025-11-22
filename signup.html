@@ -45,20 +45,31 @@
 
     <script>
         // --- CONFIGURATION ---
+        // BURAYI KENDİ BİLGİLERİNLE DOLDURMAYI UNUTMA
         const SUPABASE_URL = 'BURAYA_SUPABASE_URL_GELECEK';
         const SUPABASE_KEY = 'BURAYA_SUPABASE_ANON_KEY_GELECEK';
 
-        // DÜZELTME BURADA YAPILDI:
-        // Değişken adını 'supabase' yerine 'supabaseClient' yaptık.
-        // Kütüphaneyi de 'window.supabase' olarak çağırdık.
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // --- BAĞLANTIYI GÜVENLİ ŞEKİLDE BAŞLATMA ---
+        try {
+            if (!window.supabase) {
+                console.error("Supabase kütüphanesi yüklenemedi!");
+                alert("Hata: Supabase kütüphanesi yüklenemedi. Sayfayı yenileyin.");
+            } else {
+                // Değişkeni window nesnesine atıyoruz ki her yerden erişilebilsin ve çakışma olmasın
+                window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log("Supabase bağlantısı hazır.");
+            }
+        } catch (err) {
+            console.error("Başlatma Hatası:", err);
+        }
 
+        // --- KAYIT FONKSİYONU ---
         async function handleSignup() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const btn = document.getElementById('btn');
 
-            // Basit Validasyon
+            // 1. Basit Kontroller
             if(!email || !password) {
                 alert('Please fill all fields');
                 return;
@@ -68,29 +79,29 @@
                 return;
             }
 
-            // Butonu Kilitle (Çift tıklamayı önle)
+            // 2. Butonu Kilitleme
             btn.innerText = 'Creating Account...';
             btn.classList.add('opacity-50', 'cursor-not-allowed');
             btn.disabled = true;
 
             try {
-                // Değişken adı güncellendi: supabaseClient
-                const { data, error } = await supabaseClient.auth.signUp({ 
+                // window._supabase kullanarak çağırıyoruz
+                const { data, error } = await window._supabase.auth.signUp({ 
                     email: email, 
                     password: password 
                 });
 
                 if (error) throw error;
                 
-                // Başarı Durumu
-                alert('Success! Confirmation email sent to ' + email + '. Please verify your account.');
+                // 3. Başarılı
+                alert('Success! Confirmation email sent to ' + email + '. Please verify your account before logging in.');
                 window.location.href = 'login.html';
                 
             } catch (err) {
                 console.error("Signup Error:", err);
                 alert('Error: ' + err.message);
             } finally {
-                // Butonu Eski Haline Getir
+                // 4. Butonu Eski Haline Getirme
                 btn.innerText = 'Sign Up';
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.disabled = false;
