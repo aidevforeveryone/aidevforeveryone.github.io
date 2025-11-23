@@ -3,152 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI+ Remote IDE</title>
+    <title>AI+ Code Editor</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
     
     <style>
+        /* --- GENEL AYARLAR (VS Code Style) --- */
         body {
-            background-color: #1e1e1e;
+            background-color: #1e1e1e; /* VS Code Main BG */
             color: #d4d4d4;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            display: flex;
+            padding: 0;
             height: 100vh;
-        }
-        .container {
-            display: flex;
-            width: 100%;
-        }
-        .editor-pane {
-            width: 60%;
             display: flex;
             flex-direction: column;
-            border-right: 2px solid #333;
+            overflow: hidden;
         }
-        .output-pane {
-            width: 40%;
-            padding: 20px;
-            background-color: #252526;
-            overflow-y: auto;
-            font-family: 'Consolas', 'Courier New', monospace;
+
+        /* --- ÜST KISIM: EDİTÖR --- */
+        #editor-container {
+            flex-grow: 1; /* Kalan tüm alanı kapla */
+            position: relative;
+            overflow: hidden;
         }
-        .header {
-            padding: 10px 20px;
-            background-color: #333;
-            display: flex;
-            justify_content: space-between;
-            align-items: center;
-        }
-        button {
-            background-color: #0e639c;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            border-radius: 3px;
-            transition: background 0.3s;
-        }
-        button:hover { background-color: #1177bb; }
-        button:disabled { background-color: #555; cursor: not-allowed; }
-        
+
+        /* CodeMirror Özelleştirmesi */
         .CodeMirror {
-            height: 100%;
+            height: 100% !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 14px;
+            line-height: 1.5;
+            background-color: #1e1e1e !important; /* Tema rengini ez */
         }
-        #output {
-            white-space: pre-wrap;
+        
+        /* Satır numaraları */
+        .CodeMirror-gutters {
+            background-color: #1e1e1e !important;
+            border-right: 1px solid #333;
+        }
+        .CodeMirror-linenumber {
+            color: #858585 !important;
+        }
+
+        /* --- RUN BUTONU (Sağ Üst Köşe) --- */
+        .run-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 100;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            color: #4CAF50; /* VS Code Yeşil Play Rengi */
+        }
+        .run-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .run-button svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        .run-button span {
+            font-size: 12px;
+            margin-left: 5px;
+            font-weight: 600;
             color: #ccc;
         }
-        .loading { color: #f1c40f; }
+
+        /* --- ALT KISIM: TERMİNAL / KONSOL --- */
+        #terminal-container {
+            height: 30vh; /* Ekranın %30'u */
+            background-color: #1e1e1e;
+            border-top: 1px solid #333; /* Panel ayracı */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-header {
+            padding: 5px 15px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #999;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #2b2b2b;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        /* "TERMINAL" yazısının altı çizili efekti */
+        .tab-active {
+            color: #e7e7e7;
+            border-bottom: 1px solid #e7e7e7;
+            padding-bottom: 4px;
+        }
+
+        #output {
+            flex-grow: 1;
+            padding: 10px 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #cccccc;
+            overflow-y: auto;
+            white-space: pre-wrap; /* Satırları kaydır */
+        }
+
+        /* Scrollbar Tasarımı (VS Code Tarzı) */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #424242; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f4f4f; 
+        }
+        
+        /* Loading Animasyonu */
+        .loading {
+            color: #3498db !important;
+        }
+        .error-msg {
+            color: #f48771 !important; /* VS Code Hata Rengi */
+        }
+        .success-msg {
+            color: #89d185 !important;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="editor-pane">
-        <div class="header">
-            <span><b>AI+</b> Python Environment</span>
-            <button id="runBtn" onclick="runPython()">▶ Çalıştır</button>
-        </div>
+    <div id="editor-container">
+        <button class="run-button" id="runBtn" onclick="runPython()" title="Run Code (Ctrl+Enter)">
+            <svg viewBox="0 0 24 24">
+                <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+            </svg>
+            <span>Run</span>
+        </button>
+        
         <textarea id="code-editor">
-# Örnek Kullanım
-# Sunucudaki gizli 'NeuroModel' sınıfını kullanabilirsin.
+# AI+ Python Modülü
+# Distributed Network üzerinde çalışır.
 
-model = NeuroModel()
-print("Model oluşturuldu.")
+from aiplus import NeuroModel
 
-data = ["merhaba dünya", "python harika"]
-print("Eğitim başlıyor...")
+print("--- Sistem Başlatılıyor ---")
 
-model.fit(data, epochs=1)
+# Modeli oluştur
+brain = NeuroModel(capacity=5000)
+print("Nöron Ağı Hazır.")
 
-sonuc = model.predict("merhaba")
-print(f"Tahmin sonucu: {sonuc}")
+# Basit bir işlem testi
+x = 10
+y = 20
+print(f"Hesaplama Sonucu: {x * y}")
 </textarea>
     </div>
-    
-    <div class="output-pane">
-        <div style="border-bottom: 1px solid #444; margin-bottom: 10px; padding-bottom: 5px;">TERMINAL OUTPUT</div>
-        <div id="output">Hazır. Kodu çalıştırmak için butona basın.</div>
+
+    <div id="terminal-container">
+        <div class="terminal-header">
+            <span class="tab-active">TERMINAL</span>
+            <span>OUTPUT</span>
+            <span>DEBUG CONSOLE</span>
+        </div>
+        <div id="output">
+Microsoft Windows [Version 10.0.19045.4291]
+(c) AI+ Corporation. All rights reserved.
+
+pulse@node-01:~$ _
+        </div>
     </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
 
-<script>
-    // Editörü başlat
-    var editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
-        mode: "python",
-        theme: "dracula",
-        lineNumbers: true,
-        indentUnit: 4
-    });
-
-    function runPython() {
-        const btn = document.getElementById("runBtn");
-        const out = document.getElementById("output");
-        const code = editor.getValue();
-
-        btn.disabled = true;
-        btn.innerText = "Sunucuya Gönderiliyor...";
-        out.innerText = "";
-        out.classList.add("loading");
-
-        // BURAYI DEĞİŞTİR: PythonAnywhere tam adresi
-        const SERVER_URL = "https://seninkullaniciadin.pythonanywhere.com/run_code";
-
-        fetch(SERVER_URL, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({ code: code })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Sunucu hatası: " + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            out.classList.remove("loading");
-            out.innerText = data.output;
-        })
-        .catch(err => {
-            out.classList.remove("loading");
-            // Eğer CORS hatası alırsan konsolda (F12) "CORS policy" yazar.
-            out.innerText = "Bağlantı Hatası: " + err + "\n(PythonAnywhere web app'i reload ettin mi?)";
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerText = "▶ Çalıştır";
+    <script>
+        // 1. Editörü Başlat
+        var editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+            mode: "python",
+            theme: "dracula", // VS Code'a en yakın hazır tema
+            lineNumbers: true,
+            indentUnit: 4,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            scrollbarStyle: "native"
         });
-    }
-</script>
 
+        // 2. PythonAnywhere Bağlantı Ayarı
+        // Buraya kendi PythonAnywhere kullanıcı adını yazmalısın:
+        const USERNAME = "eymenkusan"; 
+        const SERVER_URL = `https://${USERNAME}.pythonanywhere.com/run_code`;
+
+        // 3. Çalıştırma Fonksiyonu
+        function runPython() {
+            const btn = document.getElementById("runBtn");
+            const out = document.getElementById("output");
+            const code = editor.getValue();
+            
+            // UI Güncelleme (Çalışıyor efekti)
+            const icon = btn.querySelector("svg");
+            icon.style.fill = "#f1c40f"; // Sarı yap
+            
+            // Terminali temizle ve prompt göster
+            out.innerHTML = "<span style='color:#ccc'>pulse@node-01:~$ python script.py</span>\n";
+            out.classList.add("loading");
+
+            fetch(SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Server connection failed (" + response.status + ")");
+                return response.json();
+            })
+            .then(data => {
+                out.classList.remove("loading");
+                // Çıktıyı ekrana bas
+                out.innerHTML += data.output + "\n";
+                out.innerHTML += "\n<span style='color:#ccc'>pulse@node-01:~$ _</span>";
+                
+                // Scroll'u en aşağı çek
+                out.scrollTop = out.scrollHeight;
+            })
+            .catch(err => {
+                out.classList.remove("loading");
+                out.innerHTML += `<span class="error-msg">\n[ERROR] ${err}</span>`;
+                out.innerHTML += "\n<span style='color:#ccc'>pulse@node-01:~$ _</span>";
+            })
+            .finally(() => {
+                icon.style.fill = "#4CAF50"; // Tekrar yeşil yap
+            });
+        }
+
+        // Kısayol: CTRL + ENTER ile çalıştır
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                runPython();
+            }
+        });
+    </script>
 </body>
 </html>
