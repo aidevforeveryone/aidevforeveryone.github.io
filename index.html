@@ -10,11 +10,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* Modal için arka plan bulanıklığı */
         .modal-backdrop {
             background-color: rgba(3, 3, 4, 0.8);
             backdrop-filter: blur(8px);
         }
+        /* Scrollbar for contract */
+        .contract-scroll::-webkit-scrollbar { width: 6px; }
+        .contract-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
+        .contract-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -25,6 +28,7 @@
             <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                 <div class="flex items-center gap-2 group cursor-pointer">
                     <span class="text-2xl font-extrabold tracking-widest text-white">AI+</span>
+                    <span id="user-plan-badge" class="hidden text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">FREE</span>
                 </div>
                 
                 <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
@@ -34,23 +38,18 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    
                     <div id="auth-logged-out" class="flex items-center gap-4">
                         <a href="login.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Login</a>
                         <a href="signup.html">
-                            <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
-                                Sign Up
-                            </button>
+                            <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">Sign Up</button>
                         </a>
                     </div>
 
                     <div id="auth-logged-in" class="hidden flex items-center gap-4">
-                        <button onclick="showApiKey()" class="text-sm font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded transition mr-2">
-                            My API Key
-                        </button>
-
+                        <button onclick="showApiKey()" class="text-sm font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded transition mr-2">My API Key</button>
+                        
                         <a href="/console">
-                            <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
+                             <button class="text-sm font-bold bg-white text-black px-5 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-900 transition flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="17" y2="17"></line></svg>
                                 Console
                             </button>
@@ -60,86 +59,105 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
                         </button>
                     </div>
-
                 </div>
             </div>
         </nav>
 
         <div id="apikey-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center modal-backdrop px-4">
             <div class="bg-[#0A0A0C] border border-cyan-500/30 p-8 rounded-2xl w-full max-w-md relative shadow-2xl shadow-cyan-900/20">
-                <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+                <button onclick="closeModal('apikey-modal')" class="absolute top-4 right-4 text-gray-500 hover:text-white transition">✕</button>
                 
                 <div class="mb-6">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-400 text-[10px] font-bold uppercase tracking-wider mb-3">
-                        Secure Access
-                    </div>
-                    <h2 class="text-2xl font-bold text-white">Your API Key</h2>
-                    <p class="text-gray-400 text-sm mt-2">Use this key to connect your local client to the AI+ Cloud Engine.</p>
+                    <h2 class="text-2xl font-bold text-white">Your API Access</h2>
+                    <p class="text-gray-400 text-sm mt-2">Connect your local client to the AI+ Cloud Engine.</p>
                 </div>
                 
-                <div class="bg-black/50 p-4 rounded-lg border border-white/10 flex items-center justify-between mb-6 group hover:border-cyan-500/30 transition">
-                    <code id="user-api-key" class="text-cyan-400 font-mono text-sm truncate mr-4 select-all">Loading key...</code>
-                    <button onclick="copyKey()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded transition border border-white/5">Copy</button>
+                <div id="api-locked-view" class="hidden text-center py-6 border border-dashed border-gray-700 rounded-lg bg-gray-900/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-500 mb-3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <h3 class="text-white font-bold">API Key Locked</h3>
+                    <p class="text-xs text-gray-500 mt-1 mb-4">Upgrade to Researcher Plan to reveal your key & download the client.</p>
+                    <a href="#pricing" onclick="closeModal('apikey-modal')" class="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded font-bold">Upgrade Now</a>
                 </div>
 
-                <a href="javascript:void(0)" onclick="downloadClient()" class="text-xs text-gray-500 flex items-center gap-1 hover:text-white transition justify-center hover:underline">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
-                    Download Client Software (client.py)
-                </a>
+                <div id="api-unlocked-view" class="hidden">
+                    <div class="bg-black/50 p-4 rounded-lg border border-white/10 flex items-center justify-between mb-6">
+                        <code id="user-api-key" class="text-cyan-400 font-mono text-sm truncate mr-4 select-all">Loading...</code>
+                        <button onclick="copyKey()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded transition border border-white/5">Copy</button>
+                    </div>
+
+                    <a href="YOUR_EXE_DOWNLOAD_LINK_HERE" target="_blank" class="block w-full text-center bg-white/5 hover:bg-white/10 border border-white/10 text-white py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:text-cyan-400 transition"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+                        Download Client (v2.4.exe)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="contract-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center modal-backdrop px-4">
+            <div class="bg-[#0f0f11] border border-white/10 p-0 rounded-2xl w-full max-w-lg relative shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                
+                <div class="p-6 border-b border-white/5 bg-[#151517]">
+                    <h2 class="text-xl font-bold text-white">Service Agreement</h2>
+                    <p class="text-xs text-gray-400">Please review the terms for the internal debt system.</p>
+                </div>
+
+                <div class="p-6 overflow-y-auto contract-scroll text-sm text-gray-300 leading-relaxed space-y-4">
+                    <p class="font-bold text-white">1. SERVICE PROVISION</p>
+                    <p>By clicking "Accept & Subscribe", you agree to purchase the "Researcher Plan" from AI+ Technologies.</p>
+                    
+                    <p class="font-bold text-white">2. INTERNAL DEBT & PAYMENT</p>
+                    <p>This platform operates on a deferred payment system. Upon acceptance, a debt of <span class="text-cyan-400 font-bold">$29.00 USD</span> will be recorded in your internal ledger for the current billing cycle.</p>
+                    <p>You agree to settle this balance within 30 days of the invoice date. Failure to settle internal debts may result in API suspension.</p>
+
+                    <p class="font-bold text-white">3. USAGE LIMITS</p>
+                    <p>The Researcher plan provides unlimited biological neuron simulation, subject to fair use policies.</p>
+                    
+                    <p class="text-xs text-gray-500 mt-4 border-t border-white/5 pt-4">
+                        * This is a binding digital agreement. Your IP address and User ID will be recorded upon acceptance.
+                    </p>
+                </div>
+
+                <div class="p-6 border-t border-white/5 bg-[#151517] flex justify-end gap-3">
+                    <button onclick="closeModal('contract-modal')" class="text-sm text-gray-400 hover:text-white px-4 py-2">Cancel</button>
+                    <button onclick="confirmUpgrade()" id="btn-confirm-upgrade" class="text-sm bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-6 py-2 rounded-lg transition shadow-lg shadow-cyan-600/20">
+                        I Agree & Subscribe ($29/mo)
+                    </button>
+                </div>
             </div>
         </div>
 
         <header class="relative pt-32 pb-20 lg:pt-40 lg:pb-32 px-6 overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] -z-10 animate-pulse-fade"></div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-[120px] -z-10"></div>
-            
+             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] -z-10 animate-pulse-fade"></div>
             <div class="max-w-5xl mx-auto text-center">
                 <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-400 text-xs font-bold mb-8">
                     <span class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span> Bio-Inspired Training Engine
                 </div>
-                
                 <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
                     AI Development <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">
-                        For Everyone.
-                    </span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">For Everyone.</span>
                 </h1>
-                
                 <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-                    No traditional layers. No backpropagation. <br/>
-                    AI+ eliminates hardware bottlenecks using <strong>Hebbian-like</strong> learning rules 
-                    and <strong>active neuron simulation</strong>. Train biological logic on your laptop.
+                    No traditional layers. No backpropagation. <br/>AI+ eliminates hardware bottlenecks using <strong>Hebbian-like</strong> logic.
                 </p>
-                
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <button onclick="window.location.href='signup.html'" class="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold text-white transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
-                        Get Started 
+                    <button onclick="handleGetStarted()" class="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold text-white transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
+                        Get Started
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                    </button>
-                    <button class="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-white transition flex items-center justify-center gap-2">
-                        Read Whitepaper
                     </button>
                 </div>
             </div>
         </header>
 
         <section id="benchmark" class="py-20 bg-[#050505] border-y border-white/5">
-            <div class="max-w-7xl mx-auto px-6">
+             <div class="max-w-7xl mx-auto px-6">
                 <div class="grid lg:grid-cols-2 gap-16 items-center">
                     <div>
                         <h2 class="text-3xl md:text-4xl font-bold mb-6">Forget Hardware Limits</h2>
-                        <p class="text-gray-400 mb-8 leading-relaxed">
-                            The following data represents real-world tests performed on an <strong>NVIDIA RTX 4050 Mobile</strong> GPU.
-                        </p>
+                        <p class="text-gray-400 mb-8 leading-relaxed">The following data represents real-world tests performed on an <strong>NVIDIA RTX 4050 Mobile</strong> GPU.</p>
                         <div class="space-y-4">
                             <div class="bg-[#0A0A0C] p-5 rounded-xl border border-white/10 flex items-center justify-between">
-                                <div>
-                                    <div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Model Capacity</div>
-                                    <div class="text-2xl font-bold text-white">91,000 <span class="text-sm text-gray-500 font-normal">Neurons</span></div>
-                                </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 w-8 h-8"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg>
+                                <div><div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Model Capacity</div><div class="text-2xl font-bold text-white">91,000 <span class="text-sm text-gray-500 font-normal">Neurons</span></div></div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="text-gray-600 w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg>
                             </div>
                             <div class="bg-[#0A0A0C] p-5 rounded-xl border border-cyan-500/30 relative overflow-hidden">
                                 <div class="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-cyan-500/10 to-transparent"></div>
@@ -149,49 +167,22 @@
                                     <div class="text-xs text-green-400 mt-1">Sparse Activation Active</div>
                                 </div>
                             </div>
-                            <div class="bg-[#0A0A0C] p-5 rounded-xl border border-white/10 flex items-center justify-between">
-                                <div>
-                                    <div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Training Speed</div>
-                                    <div class="text-2xl font-bold text-white">12 Min <span class="text-sm text-gray-500 font-normal">/ Full Cycle</span></div>
-                                </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-8 h-8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                             <div class="bg-[#0A0A0C] p-5 rounded-xl border border-white/10 flex items-center justify-between">
+                                <div><div class="text-xs text-gray-500 font-bold uppercase tracking-wider">Training Speed</div><div class="text-2xl font-bold text-white">12 Min <span class="text-sm text-gray-500 font-normal">/ Full Cycle</span></div></div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="text-yellow-500 w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                             </div>
                         </div>
                     </div>
-
                     <div class="relative group" id="code">
                         <div class="absolute inset-0 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition duration-500"></div>
                         <div class="relative bg-[#0C0C0C] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                             <div class="bg-[#151517] px-4 py-3 flex items-center border-b border-white/5">
-                                <div class="flex gap-2 mr-4">
-                                    <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                                    <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                                    <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
-                                </div>
-                                <div class="text-xs text-gray-500 font-mono flex-1 text-center pr-12">
-                                    train_bio_model.py
-                                </div>
+                                <div class="flex gap-2 mr-4"><div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div><div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div><div class="w-3 h-3 rounded-full bg-[#27C93F]"></div></div>
+                                <div class="text-xs text-gray-500 font-mono flex-1 text-center pr-12">train_bio_model.py</div>
                             </div>
                             <div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto">
-                                <div class="opacity-40 mb-6 select-none">
-                                    <div class="text-gray-500 mb-1"># Classic Method (Dense)</div>
-                                    <div class="line-through decoration-red-500/50 decoration-2">import keras</div>
-                                    <div class="line-through decoration-red-500/50 decoration-2">model = Dense(units=4096, activation='relu')</div>
-                                    <div class="text-red-400 text-xs mt-1 italic">&gt; Calculating 4096^2 connections... OOM Error.</div>
-                                </div>
-                                <div class="relative">
-                                    <div class="absolute -left-6 top-0 bottom-0 w-1 bg-cyan-500/50 rounded-full"></div>
-                                    <div class="text-gray-500 mb-2"># AI+ (Biological Arch)</div>
-                                    <div><span class="text-purple-400">import</span> aiplus <span class="text-purple-400">as</span> aip</div>
-                                    <div class="mt-2"><span class="text-blue-400">net</span> = aip.BioNetwork(neurons=<span class="text-yellow-400">91000</span>)</div>
-                                    <div><span class="text-gray-500"># Only active neurons are computed:</span></div>
-                                    <div>net.train(data, rule=<span class="text-green-400">'hebbian_dynamic'</span>)</div>
-                                    <div class="mt-4 p-3 bg-black/30 rounded border border-white/5 text-xs font-mono text-cyan-300">
-                                        <span class="text-green-400">➜</span> [AI+] Active Neurons: %12 <br/>
-                                        <span class="text-green-400">➜</span> [CPU] Serial Rules Processed<br/>
-                                        <span class="text-green-400">➜</span> [GPU] Parallel Weights Updated
-                                    </div>
-                                </div>
+                                <div class="opacity-40 mb-6 select-none"><div class="text-gray-500 mb-1"># Classic Method (Dense)</div><div class="line-through decoration-red-500/50 decoration-2">import keras</div><div class="line-through decoration-red-500/50 decoration-2">model = Dense(units=4096, activation='relu')</div><div class="text-red-400 text-xs mt-1 italic">&gt; Calculating 4096^2 connections... OOM Error.</div></div>
+                                <div class="relative"><div class="absolute -left-6 top-0 bottom-0 w-1 bg-cyan-500/50 rounded-full"></div><div class="text-gray-500 mb-2"># AI+ (Biological Arch)</div><div><span class="text-purple-400">import</span> aiplus <span class="text-purple-400">as</span> aip</div><div class="mt-2"><span class="text-blue-400">net</span> = aip.BioNetwork(neurons=<span class="text-yellow-400">91000</span>)</div><div><span class="text-gray-500"># Only active neurons are computed:</span></div><div>net.train(data, rule=<span class="text-green-400">'hebbian_dynamic'</span>)</div><div class="mt-4 p-3 bg-black/30 rounded border border-white/5 text-xs font-mono text-cyan-300"><span class="text-green-400">➜</span> [AI+] Active Neurons: %12 <br/><span class="text-green-400">➜</span> [CPU] Serial Rules Processed<br/><span class="text-green-400">➜</span> [GPU] Parallel Weights Updated</div></div>
                             </div>
                         </div>
                     </div>
@@ -210,20 +201,14 @@
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-8">
-                    
                     <div class="bg-[#08080A] border border-white/10 p-8 rounded-2xl hover:border-cyan-500/30 transition duration-300 group">
                         <div class="bg-cyan-900/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-cyan-400"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>
                         </div>
                         <h3 class="text-xl font-bold text-white mb-3">No Hidden Layers</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            Instead of the classic "Input - Hidden - Output" stack, we use a free-form 
-                            biological <strong>Mesh</strong> structure. Data flows organically through the network.
-                        </p>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">Instead of the classic "Input - Hidden - Output" stack, we use a free-form biological <strong>Mesh</strong> structure.</p>
                         <div class="h-24 border border-white/5 rounded-lg bg-black/40 relative overflow-hidden flex items-center justify-center">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-30">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-gray-600"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg>
-                            </div>
+                            <div class="absolute inset-0 flex items-center justify-center opacity-30"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-gray-600"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="m12 8 0 4"></path></svg></div>
                             <div class="z-10 text-xs font-mono text-cyan-300 bg-cyan-900/30 px-2 py-1 rounded">Unstructured Mesh</div>
                         </div>
                     </div>
@@ -234,15 +219,10 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-purple-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         </div>
                         <h3 class="text-xl font-bold text-white mb-3">Sparse Activation</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            We only simulate neurons that are actively firing. This reduces the 
-                            computational load by up to 90%, bypassing OOM errors.
-                        </p>
-                        
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">We only simulate neurons that are actively firing. This reduces the computational load by up to 90%.</p>
                         <div class="h-24 border border-white/5 rounded-lg bg-black/40 p-4 grid" style="grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.5rem; align-items: center; justify-content: center;">
                             <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
                             <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
-                            <div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div><div class="w-1.5 h-1.5 rounded-full bg-gray-800"></div>
                             <div class="col-span-8 text-[10px] text-center text-gray-500 mt-1">Only firing neurons processed</div>
                         </div>
                     </div>
@@ -252,225 +232,215 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-blue-400"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M6 21V9a9 9 0 0 0 9 9"></path></svg>
                         </div>
                         <h3 class="text-xl font-bold text-white mb-3">Hebbian & Hybrid</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            The Hebbian rule is split: Serial logic operations are handled by the CPU, 
-                            while parallel weight updates are offloaded to the GPU.
-                        </p>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">Serial logic operations are handled by the CPU, while parallel weight updates are offloaded to the GPU.</p>
                         <div class="h-24 border border-white/5 rounded-lg bg-black/40 flex items-center justify-center gap-4 px-4">
-                            <div class="flex flex-col items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-400"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M15 9h-6V7h6V9z"></path><path d="M12 17v-2"></path><path d="M12 9v-2"></path><path d="M9 12H7"></path><path d="M17 12h-2"></path></svg>
-                                <span class="text-[10px] text-gray-500">CPU (Logic)</span>
-                            </div>
+                            <div class="flex flex-col items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-400"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M15 9h-6V7h6V9z"></path><path d="M12 17v-2"></path><path d="M12 9v-2"></path><path d="M9 12H7"></path><path d="M17 12h-2"></path></svg><span class="text-[10px] text-gray-500">CPU (Logic)</span></div>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-600"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                            <div class="flex flex-col items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-cyan-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                                <span class="text-[10px] text-cyan-500">GPU (Weight)</span>
-                            </div>
+                            <div class="flex flex-col items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-cyan-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span class="text-[10px] text-cyan-500">GPU (Weight)</span></div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
 
+        <section id="pricing" class="py-20 px-6 border-t border-white/5">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-12">Access Plans</h2>
+                <div class="grid md:grid-cols-2 gap-8 text-left">
+                    
+                    <div class="p-8 rounded-2xl border border-white/10 bg-[#0A0A0C] hover:border-white/20 transition opacity-75">
+                        <h3 class="text-xl font-bold text-white mb-2">Community</h3>
+                        <div class="text-3xl font-bold text-white mb-6">Free</div>
+                        <ul class="space-y-3 text-sm text-gray-400 mb-8">
+                            <li class="flex gap-2">✓ Basic CPU Hebbian Mode</li>
+                            <li class="flex gap-2">✓ 10k Neuron Limit</li>
+                            <li class="flex gap-2 text-red-400">✕ No API Key Access</li>
+                        </ul>
+                        <button class="w-full py-3 border border-white/20 rounded-lg text-white cursor-not-allowed opacity-50">Current Plan (Default)</button>
+                    </div>
+
+                    <div class="p-8 rounded-2xl border border-cyan-500 bg-cyan-900/10 relative transform hover:scale-105 transition duration-300">
+                        <div class="absolute top-0 right-0 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">PRO</div>
+                        <h3 class="text-xl font-bold text-white mb-2">Researcher</h3>
+                        <div class="text-3xl font-bold text-white mb-6">$29<span class="text-lg font-normal text-gray-500">/mo</span></div>
+                        <ul class="space-y-3 text-sm text-white mb-8">
+                            <li class="flex gap-2 text-cyan-400">✓ <strong>Unlimited Bio-Neurons</strong></li>
+                            <li class="flex gap-2 text-cyan-400">✓ <strong>Full API Key Access</strong></li>
+                            <li class="flex gap-2 text-cyan-400">✓ Hybrid CPU/GPU Accelerator</li>
+                        </ul>
+                        <button onclick="handleUpgradeClick()" id="btn-upgrade" class="w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition font-bold shadow-lg shadow-cyan-500/20">
+                            Upgrade & Get API Key
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <footer class="py-10 text-center text-gray-600 text-sm border-t border-white/5">
-            <p>&copy; 2024 AI+ Technologies. AI Development for Everyone.</p>
+            <p>&copy; 2024 AI+ Technologies.</p>
         </footer>
     </div>
 
     <script>
-        // --- SUPABASE KONFİGURASYONU ---
+        // --- CONFIGURATION ---
         const SUPABASE_URL = 'https://ldtridqzmvamcqwguzzi.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdHJpZHF6bXZhbWNxd2d1enppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NzE2NDEsImV4cCI6MjA3OTI0NzY0MX0.sIpBP9SUY6vRcCbgNHPyVE-br8WXlYHjxZIm0rG1Miw';
         
-        // Supabase istemcisini başlat
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUser = null;
+        let currentPlan = 'free';
 
-        // Sayfa Yüklendiğinde Çalışacak Kod
+        // --- INIT ---
         window.onload = async () => {
-            // Mevcut oturum bilgisini al
             const { data: { session } } = await supabase.auth.getSession();
-            
-            // Arayüzü duruma göre güncelle
             updateUI(session);
         };
 
-        // Arayüzü Güncelleme Fonksiyonu (Giriş yapıldı mı kontrolü)
-        function updateUI(session) {
+        // --- UI UPDATES ---
+        async function updateUI(session) {
             const loggedOutDiv = document.getElementById('auth-logged-out');
             const loggedInDiv = document.getElementById('auth-logged-in');
+            const planBadge = document.getElementById('user-plan-badge');
 
             if (session) {
-                // Kullanıcı giriş yapmış
+                currentUser = session.user;
                 loggedOutDiv.classList.add('hidden');
                 loggedInDiv.classList.remove('hidden');
-                
-                // API Key'i çekmek için fonksiyonu çağır
-                fetchApiKey(session.user.id);
+                planBadge.classList.remove('hidden');
+
+                // Kullanıcının planını veritabanından çek
+                await fetchUserProfile(currentUser.id);
             } else {
-                // Kullanıcı giriş yapmamış
                 loggedOutDiv.classList.remove('hidden');
                 loggedInDiv.classList.add('hidden');
+                planBadge.classList.add('hidden');
             }
         }
 
-        // API Anahtarını Veritabanından Çeken Fonksiyon
-        async function fetchApiKey(userId) {
+        async function fetchUserProfile(userId) {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('api_key')
+                .select('plan_tier, api_key')
                 .eq('id', userId)
                 .single();
             
             if(data) {
-                // Gelen anahtarı modal içindeki <code> etiketine yaz
-                document.getElementById('user-api-key').innerText = data.api_key;
-            } else {
-                console.error("API Key bulunamadı:", error);
+                currentPlan = data.plan_tier || 'free'; 
+                
+                // Navbar Badge Güncelle
+                const badge = document.getElementById('user-plan-badge');
+                badge.innerText = currentPlan.toUpperCase();
+                
+                if(currentPlan === 'researcher') {
+                    badge.classList.remove('bg-gray-800', 'text-gray-400', 'border-gray-700');
+                    badge.classList.add('bg-cyan-900', 'text-cyan-400', 'border-cyan-500');
+                    // Pricing butonunu pasifleştir
+                    const upgradeBtn = document.getElementById('btn-upgrade');
+                    if(upgradeBtn) {
+                        upgradeBtn.innerText = "Current Plan (Active)";
+                        upgradeBtn.disabled = true;
+                        upgradeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+
+                // Modal içeriği için API Key'i sakla
+                if (data.api_key) {
+                    document.getElementById('user-api-key').innerText = data.api_key;
+                }
             }
         }
 
-        // Çıkış Yapma Fonksiyonu
+        // --- AKILLI GET STARTED BUTONU ---
+        function handleGetStarted() {
+            if (currentUser) {
+                // Giriş yapılıysa Console'a git
+                window.location.href = '/console';
+            } else {
+                // Değilse kayıt sayfasına git
+                window.location.href = 'signup.html';
+            }
+        }
+
+        // --- UPGRADE & ECONOMY LOGIC ---
+        function handleUpgradeClick() {
+            if (!currentUser) {
+                window.location.href = 'signup.html';
+                return;
+            }
+            if (currentPlan === 'researcher') {
+                return;
+            }
+            document.getElementById('contract-modal').classList.remove('hidden');
+        }
+
+        async function confirmUpgrade() {
+            const btn = document.getElementById('btn-confirm-upgrade');
+            btn.innerText = "Processing Transaction...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            try {
+                // VERİTABANI GÜNCELLEMESİ: Borç ekle ve Planı Yükselt
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        plan_tier: 'researcher', 
+                        balance_due: 29.00,  // Borç eklendi
+                        agreement_signed: true 
+                    })
+                    .eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                // Başarılı
+                alert("Agreement Signed! Welcome to the Researcher Plan. The amount of $29.00 has been added to your internal ledger.");
+                closeModal('contract-modal');
+                window.location.reload();
+
+            } catch (err) {
+                console.error(err);
+                alert("Transaction Failed: " + err.message);
+                btn.innerText = "I Agree & Subscribe ($29/mo)";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        // --- MODAL FUNCTIONS ---
+
+        function showApiKey() {
+            const modal = document.getElementById('apikey-modal');
+            const lockedView = document.getElementById('api-locked-view');
+            const unlockedView = document.getElementById('api-unlocked-view');
+
+            modal.classList.remove('hidden');
+
+            if (currentPlan === 'researcher') {
+                // API GÖSTER (PRO)
+                lockedView.classList.add('hidden');
+                unlockedView.classList.remove('hidden');
+            } else {
+                // KİLİTLİ GÖSTER (FREE)
+                lockedView.classList.remove('hidden');
+                unlockedView.classList.add('hidden');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
         async function logout() {
             await supabase.auth.signOut();
-            window.location.reload(); // Sayfayı yenile
+            window.location.reload();
         }
 
-        // Modal Açma/Kapama Fonksiyonları
-        function showApiKey() {
-            document.getElementById('apikey-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('apikey-modal').classList.add('hidden');
-        }
-        
-        // Kopyalama Fonksiyonu
         function copyKey() {
-            const keyElement = document.getElementById('user-api-key');
-            const key = keyElement.innerText;
-            
-            navigator.clipboard.writeText(key).then(() => {
-                const btn = event.target;
-                const originalText = btn.innerText;
-                btn.innerText = "Copied!";
-                btn.classList.add("bg-green-600");
-                
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.classList.remove("bg-green-600");
-                }, 2000);
-            });
+            const key = document.getElementById('user-api-key').innerText;
+            navigator.clipboard.writeText(key);
+            alert("Copied!");
         }
 
-        // --- DYNAMIC CLIENT DOWNLOAD FUNCTION ---
-        function downloadClient() {
-            // Python Kodunu JavaScript String'i olarak hazırlıyoruz
-            // NOT: Buraya Supabase URL ve Key'i otomatik gömüyoruz!
-            const pythonCode = `import requests
-import sys
-import time
-
-# --- AUTO-GENERATED CONFIGURATION (DO NOT EDIT) ---
-SUPABASE_URL = "${SUPABASE_URL}"
-SUPABASE_KEY = "${SUPABASE_KEY}"
-
-def verify_api_key(api_key):
-    """
-    Verifies the API key against the Pulse Network.
-    """
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}"
-    }
-    
-    # Check 'profiles' table
-    url = f"{SUPABASE_URL}/rest/v1/profiles?api_key=eq.{api_key}&select=id,email"
-    
-    try:
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        
-        if len(data) > 0:
-            return True, data[0]['email']
-        else:
-            return False, None
-    except Exception as e:
-        return False, str(e)
-
-def main():
-    print("""
-    ╔═══════════════════════════════════════╗
-    ║       AI+ TERMINAL CLIENT v2.4        ║
-    ║      Bio-Logical Cloud Interface      ║
-    ╚═══════════════════════════════════════╝
-    """)
-    
-    # Note: Requests library check
-    try:
-        import requests
-    except ImportError:
-        print("[ERROR] Missing 'requests' library.")
-        print("Please run: pip install requests")
-        input("Press Enter to exit...")
-        return
-
-    api_key = input("Enter your AI+ API Key: ").strip()
-    
-    print("\\n[Connecting] Verifying credentials with AI+ Network...")
-    time.sleep(1.0)
-    
-    is_valid, email = verify_api_key(api_key)
-    
-    if is_valid:
-        print(f"[SUCCESS] Authenticated as: {email}")
-        print("[INFO] Secure channel established.")
-        print("---------------------------------------------------")
-        
-        while True:
-            try:
-                command = input(f"aiplus@{email.split('@')[0]}:~$ ")
-                
-                if command == "exit":
-                    print("Disconnecting...")
-                    break
-                elif command == "train":
-                    print("[AI+] Uploading local weights to cloud...")
-                    time.sleep(1.5)
-                    print("[SUCCESS] Training started on remote cluster.")
-                elif command == "status":
-                    print("[STATUS] GPU Cluster: ONLINE | Latency: 24ms")
-                elif command == "help":
-                    print("Commands: train, status, exit")
-                else:
-                    print(f"Command not found: {command}")
-            except KeyboardInterrupt:
-                break
-                
-    else:
-        print("[ERROR] Invalid API Key. Access Denied.")
-        print("Please login to the website to generate a new key.")
-        input("Press Enter to exit...")
-
-if __name__ == "__main__":
-    main()
-`;
-            // Dosya oluşturma işlemi (Blob)
-            const blob = new Blob([pythonCode], { type: 'text/x-python' });
-            const url = window.URL.createObjectURL(blob);
-            
-            // İndirme linki oluşturup tıkla ve sil
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'pulse_client.py';
-            document.body.appendChild(a);
-            a.click();
-            
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
     </script>
-    
 </body>
 </html>
