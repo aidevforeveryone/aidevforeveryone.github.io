@@ -47,37 +47,6 @@
             color: #858585 !important;
         }
 
-        /* --- RUN BUTONU (Sağ Üst Köşe) --- */
-        .run-button {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            z-index: 100;
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            color: #4CAF50; /* VS Code Yeşil Play Rengi */
-        }
-        .run-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .run-button svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
-        .run-button span {
-            font-size: 12px;
-            margin-left: 5px;
-            font-weight: 600;
-            color: #ccc;
-        }
-
         /* --- ALT KISIM: TERMİNAL / KONSOL --- */
         #terminal-container {
             height: 30vh; /* Ekranın %30'u */
@@ -249,31 +218,45 @@
     </style>
 </head>
 <body>
+    <div id="menu-bar">
+    <div class="menu-item" onclick="toggleMenu('fileMenu')">File ▾</div>
+    <div class="menu-item" onclick="toggleMenu('editMenu')">Edit ▾</div>
+    <div class="menu-item" onclick="toggleMenu('runMenu')">Run ▾</div>
+</div>
 
-    <div id="editor-container">
-        <button class="run-button" id="runBtn" onclick="runPython()" title="Run Code (Ctrl+Enter)">
-            <svg viewBox="0 0 24 24">
-                <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-            </svg>
-            <span>Run</span>
-        </button>
-        
+<!-- FILE MENU -->
+<div id="fileMenu" class="dropdown">
+    <div onclick="openFile()">Open from Desktop</div>
+    <div onclick="saveFile()">Save to Desktop</div>
+</div>
+
+<!-- EDIT MENU -->
+<div id="editMenu" class="dropdown">
+    <div onclick="editor.undo()">Undo</div>
+    <div onclick="editor.redo()">Redo</div>
+    <div onclick="editor.execCommand('find')">Find</div>
+    <div onclick="editor.execCommand('replace')">Replace</div>
+</div>
+
+<!-- RUN MENU -->
+<div id="runMenu" class="dropdown">
+    <div onclick="runPython()">Run</div>
+</div>
+
+<input type="file" id="hiddenFileInput" style="display:none;" />
         <textarea id="code-editor">
 from aiplus import NeuroModel
-
 </textarea>
     </div>
 
     <div id="terminal-container">
         <div class="terminal-header">
             <span class="tab-active">TERMINAL</span>
-            <span>OUTPUT</span>
-            <span>DEBUG CONSOLE</span>
         </div>
         <div id="output">
 (c) AI+ Corporation. All rights reserved.
 
-aiplus@node-01:~$ _
+@node-01:~$ _
         </div>
     </div>
 
@@ -301,16 +284,13 @@ aiplus@node-01:~$ _
 
         // 3. Çalıştırma Fonksiyonu
         function runPython() {
-            const btn = document.getElementById("runBtn");
             const out = document.getElementById("output");
             const code = editor.getValue();
             
             // UI Güncelleme (Çalışıyor efekti)
-            const icon = btn.querySelector("svg");
-            icon.style.fill = "#f1c40f"; // Sarı yap
             
             // Terminali temizle ve prompt göster
-            out.innerHTML = "<span style='color:#ccc'>pulse@node-01:~$ python script.py</span>\n";
+            out.innerHTML = "<span style='color:#ccc'>@node-01:~$ python script.py</span>\n";
             out.classList.add("loading");
 
             fetch(SERVER_URL, {
@@ -326,7 +306,7 @@ aiplus@node-01:~$ _
                 out.classList.remove("loading");
                 // Çıktıyı ekrana bas
                 out.innerHTML += data.output + "\n";
-                out.innerHTML += "\n<span style='color:#ccc'>pulse@node-01:~$ _</span>";
+                out.innerHTML += "\n<span style='color:#ccc'>@node-01:~$ _</span>";
                 
                 // Scroll'u en aşağı çek
                 out.scrollTop = out.scrollHeight;
@@ -334,10 +314,9 @@ aiplus@node-01:~$ _
             .catch(err => {
                 out.classList.remove("loading");
                 out.innerHTML += `<span class="error-msg">\n[ERROR] ${err}</span>`;
-                out.innerHTML += "\n<span style='color:#ccc'>pulse@node-01:~$ _</span>";
+                out.innerHTML += "\n<span style='color:#ccc'>@node-01:~$ _</span>";
             })
             .finally(() => {
-                icon.style.fill = "#4CAF50"; // Tekrar yeşil yap
             });
         }
 
@@ -386,38 +365,7 @@ function saveFile() {
     a.download = "code.py";
     a.click();
 }
-
-
-
-
     </script>
-
-    <div id="menu-bar">
-    <div class="menu-item" onclick="toggleMenu('fileMenu')">File ▾</div>
-    <div class="menu-item" onclick="toggleMenu('editMenu')">Edit ▾</div>
-    <div class="menu-item" onclick="toggleMenu('runMenu')">Run ▾</div>
-</div>
-
-<!-- FILE MENU -->
-<div id="fileMenu" class="dropdown">
-    <div onclick="openFile()">Open from Desktop</div>
-    <div onclick="saveFile()">Save to Desktop</div>
-</div>
-
-<!-- EDIT MENU -->
-<div id="editMenu" class="dropdown">
-    <div onclick="editor.undo()">Undo</div>
-    <div onclick="editor.redo()">Redo</div>
-    <div onclick="editor.execCommand('find')">Find</div>
-    <div onclick="editor.execCommand('replace')">Replace</div>
-</div>
-
-<!-- RUN MENU -->
-<div id="runMenu" class="dropdown">
-    <div onclick="runPython()">Run</div>
-</div>
-
-<input type="file" id="hiddenFileInput" style="display:none;" />
 
 </body>
 </html>
